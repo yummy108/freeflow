@@ -1,30 +1,28 @@
-/* =============== FreeFlow Frontend Logic =============== */
+/* =============== FreeFlow Frontend Logic v2 =============== */
 
-// ---- CONFIG ----
-// Replace these with your actual values after forking the repo.
 const CONFIG = {
-  // GitHub repo where Actions run (e.g. "yourname/freeflow")
-  repo: localStorage.getItem('ff_repo') || 'yourname/freeflow',
-  // GitHub PAT (Personal Access Token) with 'repo' scope — generated & stored locally only.
-  // Get one at https://github.com/settings/tokens (classic, no expiry recommended)
+  repo: localStorage.getItem('ff_repo') || 'yummy108/freeflow',
   token: localStorage.getItem('ff_token') || '',
 };
 
-// ---- Mode Switch ----
-const modeBtns = document.querySelectorAll('.mode-btn');
+// ============== Mode Switch ==============
+const modeBtns = document.querySelectorAll('.mode-tab');
 modeBtns.forEach(btn => btn.addEventListener('click', () => {
   modeBtns.forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById(`mode-${btn.dataset.mode}`).classList.add('active');
+  const mode = btn.dataset.mode;
+  const target = document.getElementById(`mode-${mode}`);
+  if (target) target.classList.add('active');
 }));
 
-// ---- Drag & Drop .md ----
+// ============== Drag & Drop ==============
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('file-input');
 const mdPreview = document.getElementById('md-preview');
 const mdContent = document.getElementById('md-content');
 const mdFilename = document.getElementById('md-filename');
+const mdFilesize = document.getElementById('md-filesize');
 const mdClear = document.getElementById('md-clear');
 
 let currentMd = null;
@@ -52,60 +50,83 @@ mdClear.addEventListener('click', () => {
 
 function handleFile(file) {
   if (!file.name.endsWith('.md') && !file.name.endsWith('.markdown')) {
-    alert('Please upload a .md file');
+    showToast('Please upload a .md file', 'error');
     return;
   }
   if (file.size > 2 * 1024 * 1024) {
-    alert('Max 2 MB');
+    showToast('Max 2 MB file size', 'error');
     return;
   }
   const reader = new FileReader();
   reader.onload = e => {
-    currentMd = { name: file.name, content: e.target.result };
-    mdFilename.textContent = `📄 ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+    currentMd = { name: file.name, content: e.target.result, size: file.size };
+    mdFilename.textContent = file.name;
+    mdFilesize.textContent = `${(file.size / 1024).toFixed(1)} KB`;
     mdContent.textContent = currentMd.content.slice(0, 2000) + (currentMd.content.length > 2000 ? '\n...' : '');
     mdPreview.classList.remove('hidden');
+    mdPreview.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
   reader.readAsText(file);
 }
 
-// ---- Trigger Pipeline ----
+// ============== Toast Notification ==============
+function showToast(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  toast.style.cssText = `
+    position: fixed; top: 20px; right: 20px;
+    background: ${type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#06b6d4'};
+    color: white; padding: 14px 22px;
+    border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    font-weight: 600; font-size: 14px;
+    z-index: 9999; animation: fadeInUp 0.3s;
+    max-width: 320px;
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+
+// ============== Pipeline Trigger ==============
 const triggerBtn = document.getElementById('trigger-pipeline');
 const mdStatus = document.getElementById('md-status');
 const mdResult = document.getElementById('md-result');
 const statusText = document.getElementById('status-text');
+const statusTitle = document.getElementById('status-title');
 const resultVideo = document.getElementById('result-video');
 const resultDownload = document.getElementById('result-download');
 const resultLink = document.getElementById('result-link');
+const progressFill = document.getElementById('progress-fill');
 
 triggerBtn.addEventListener('click', async () => {
-  if (!currentMd) { alert('Upload a .md file first!'); return; }
+  if (!currentMd) {
+    showToast('Upload a .md file first!', 'error');
+    return;
+  }
 
-  // Settings
   const settings = {
     voice: document.getElementById('voice-select').value,
     style_prompt: document.getElementById('style-prompt').value || '',
     style: document.getElementById('style-select').value,
     aspect: document.getElementById('aspect-select').value,
     md: currentMd,
-    timestamp: Date.now(),
   };
 
-  // Save PAT prompt (only first time)
   if (!CONFIG.token) {
     const token = prompt(
-      '🔑 Enter your GitHub Personal Access Token (PAT)\n' +
-      'Get one at https://github.com/settings/tokens (classic, repo scope).\n' +
-      'Stored in localStorage only — never sent anywhere except GitHub API.'
+      '🔑 Enter your GitHub Personal Access Token (PAT)\n\n' +
+      'Get one at https://github.com/settings/tokens\n' +
+      '(Classic · repo scope · No expiration recommended)\n\n' +
+      '⚠️ Stored in browser localStorage only.'
     );
     if (!token) return;
     CONFIG.token = token;
     localStorage.setItem('ff_token', token);
+    showToast('✅ PAT saved', 'success');
   }
 
-  // Get repo
   if (CONFIG.repo === 'yourname/freeflow') {
-    const repo = prompt('Enter your GitHub repo (e.g. johndoe/freeflow):');
+    const repo = prompt('Enter your GitHub repo (e.g. yummy108/freeflow):');
     if (!repo) return;
     CONFIG.repo = repo;
     localStorage.setItem('ff_repo', repo);
@@ -113,11 +134,13 @@ triggerBtn.addEventListener('click', async () => {
 
   mdResult.classList.add('hidden');
   mdStatus.classList.remove('hidden');
-  statusText.textContent = 'Triggering GitHub Action…';
+  mdStatus.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  animateProgress();
 
   try {
-    // Step 1: Write .md file to repo via Contents API
-    statusText.textContent = 'Uploading .md to repo…';
+    // Step 1: Upload MD
+    setStatus('Uploading .md to GitHub...', '📤 Uploading file', 10);
+    setActiveStep('upload');
     const path = `pipeline/inputs/${Date.now()}-${currentMd.name}`;
     const content = btoa(unescape(encodeURIComponent(currentMd.content)));
     const putRes = await fetch(`https://api.github.com/repos/${CONFIG.repo}/contents/${path}`, {
@@ -132,10 +155,11 @@ triggerBtn.addEventListener('click', async () => {
         branch: 'main',
       }),
     });
-    if (!putRes.ok) throw new Error(`Upload failed: ${putRes.status} ${putRes.statusText}`);
+    if (!putRes.ok) throw new Error(`Upload failed: ${putRes.status} ${await putRes.text()}`);
 
-    // Step 2: Trigger workflow_dispatch with settings
-    statusText.textContent = 'Starting pipeline… (this takes 2–5 min)';
+    // Step 2: Trigger workflow
+    setStatus('Triggering GitHub Actions pipeline...', '⚡ Starting workflow', 25);
+    setActiveStep('research');
     const wfRes = await fetch(`https://api.github.com/repos/${CONFIG.repo}/actions/workflows/on-demand.yml/dispatches`, {
       method: 'POST',
       headers: {
@@ -155,23 +179,66 @@ triggerBtn.addEventListener('click', async () => {
     });
     if (!wfRes.ok && wfRes.status !== 204) throw new Error(`Workflow trigger failed: ${wfRes.status}`);
 
+    setStatus('Pipeline running... Research → Script → Voice → Visuals → Assemble', '🔬 AI working hard', 50);
+
+    // Animate progress steps
+    const steps = ['script', 'voice', 'visuals', 'assemble'];
+    let i = 0;
+    const stepInterval = setInterval(() => {
+      if (i < steps.length) {
+        setActiveStep(steps[i]);
+        i++;
+      }
+    }, 30000); // each step ~30s
+
     // Step 3: Poll for release
-    statusText.textContent = 'Pipeline running… generating script, voice, video. Hang tight.';
     const videoUrl = await pollForRelease(CONFIG, currentMd.name);
-    if (!videoUrl) throw new Error('Pipeline finished but no video URL found. Check Actions tab.');
+    clearInterval(stepInterval);
+    if (!videoUrl) throw new Error('Pipeline finished but no video found. Check Actions tab.');
+
+    setStatus('Video ready! 🎉', '✅ Complete', 100);
+    setActiveStep('assemble');
 
     resultVideo.src = videoUrl;
     resultDownload.href = videoUrl;
     resultDownload.download = currentMd.name.replace('.md', '.mp4');
     resultLink.href = videoUrl;
-    mdStatus.classList.add('hidden');
-    mdResult.classList.remove('hidden');
+
+    setTimeout(() => {
+      mdStatus.classList.add('hidden');
+      mdResult.classList.remove('hidden');
+      mdResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      showToast('🎉 Video ready for download!', 'success');
+    }, 800);
+
   } catch (err) {
-    statusText.textContent = '❌ ' + err.message;
+    setStatus('❌ ' + err.message, 'Failed', 0);
+    showToast(err.message, 'error');
   }
 });
 
-// Poll GitHub Releases for a new video
+function setStatus(text, title, progress) {
+  statusText.textContent = text;
+  if (statusTitle) statusTitle.textContent = title;
+  if (progressFill && progress !== undefined) progressFill.style.width = `${progress}%`;
+}
+
+function setActiveStep(step) {
+  document.querySelectorAll('.status-step').forEach(s => s.classList.remove('active'));
+  const el = document.querySelector(`.status-step[data-step="${step}"]`);
+  if (el) el.classList.add('active');
+}
+
+function animateProgress() {
+  let p = 0;
+  const interval = setInterval(() => {
+    p = Math.min(p + 2, 90);
+    if (progressFill) progressFill.style.width = `${p}%`;
+    if (p >= 90) clearInterval(interval);
+  }, 2000);
+}
+
+// Poll GitHub Releases for new video
 async function pollForRelease(cfg, name, maxWaitMs = 8 * 60 * 1000) {
   const startTime = Date.now();
   const checkInterval = 15 * 1000;
@@ -186,20 +253,18 @@ async function pollForRelease(cfg, name, maxWaitMs = 8 * 60 * 1000) {
         if (match) return match.browser_download_url;
       }
     } catch (e) { /* keep polling */ }
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    setStatus(`Pipeline running... ${elapsed}s elapsed. Research → Script → Voice → Visuals → Assemble`, '🔬 AI working hard', Math.min(90, 30 + elapsed / 4));
     await new Promise(r => setTimeout(r, checkInterval));
   }
   return null;
 }
 
-// ============ Mode 2: Auto Topics ============
+// ============== Auto Mode: Topics ==============
 const TOPICS_KEY = 'ff_topics';
 function loadTopics() {
   const stored = localStorage.getItem(TOPICS_KEY);
-  return stored ? JSON.parse(stored) : [
-    { text: 'Latest AI breakthroughs in 2026', cat: 'tech' },
-    { text: 'Mystery of the deep ocean', cat: 'mystery' },
-    { text: 'How black holes are formed', cat: 'science' },
-  ];
+  return stored ? JSON.parse(stored) : [];
 }
 function saveTopics(topics) {
   localStorage.setItem(TOPICS_KEY, JSON.stringify(topics));
@@ -209,23 +274,23 @@ const topicInput = document.getElementById('topic-input');
 const categorySelect = document.getElementById('category-select');
 const addTopicBtn = document.getElementById('add-topic-btn');
 const topicList = document.getElementById('topic-list');
+const topicCount = document.getElementById('topic-count');
 
 function renderTopics() {
   const topics = loadTopics();
   topicList.innerHTML = '';
+  topicCount.textContent = `(${topics.length})`;
   if (topics.length === 0) {
-    topicList.innerHTML = '<li class="muted">No topics yet. Add one above!</li>';
+    topicList.innerHTML = '<li class="muted center" style="background:transparent;border:none;padding:24px;">No topics yet. Add one above! 👆</li>';
     return;
   }
   topics.forEach((t, i) => {
     const li = document.createElement('li');
     li.innerHTML = `
-      <div>
-        <div class="topic-text">${escapeHtml(t.text)}</div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <span class="topic-cat">${t.cat}</span>
-        <button class="del-btn" data-i="${i}">Delete</button>
+      <div class="topic-text">${escapeHtml(t.text)}</div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <span class="topic-cat">${escapeHtml(t.cat)}</span>
+        <button class="del-btn" data-i="${i}">✕ Delete</button>
       </div>
     `;
     topicList.appendChild(li);
@@ -236,18 +301,27 @@ function renderTopics() {
       ts.splice(parseInt(b.dataset.i), 1);
       saveTopics(ts);
       renderTopics();
+      showToast('Topic deleted', 'info');
     })
   );
 }
 
 addTopicBtn.addEventListener('click', () => {
   const text = topicInput.value.trim();
-  if (!text) { alert('Enter a topic!'); return; }
+  if (!text) {
+    showToast('Enter a topic first!', 'error');
+    return;
+  }
   const topics = loadTopics();
   topics.push({ text, cat: categorySelect.value });
   saveTopics(topics);
   topicInput.value = '';
   renderTopics();
+  showToast('✅ Topic added', 'success');
+});
+
+topicInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') addTopicBtn.click();
 });
 
 function escapeHtml(s) {
@@ -256,7 +330,7 @@ function escapeHtml(s) {
 
 renderTopics();
 
-// ---- Trigger Auto One Video ----
+// ============== Trigger Auto ==============
 const triggerAuto = document.getElementById('trigger-auto');
 triggerAuto.addEventListener('click', async () => {
   if (!CONFIG.token) {
@@ -266,18 +340,19 @@ triggerAuto.addEventListener('click', async () => {
     localStorage.setItem('ff_token', token);
   }
   if (CONFIG.repo === 'yourname/freeflow') {
-    const repo = prompt('Enter your GitHub repo (e.g. johndoe/freeflow):');
+    const repo = prompt('Enter your GitHub repo (e.g. yummy108/freeflow):');
     if (!repo) return;
     CONFIG.repo = repo;
     localStorage.setItem('ff_repo', repo);
   }
 
-  // Sync topics.json to repo first
   const topics = loadTopics();
-  const topicsJson = JSON.stringify(topics, null, 2);
-  const content = btoa(unescape(encodeURIComponent(topicsJson)));
+  if (topics.length === 0) {
+    showToast('Add at least one topic first!', 'error');
+    return;
+  }
 
-  alert('🚀 Triggering auto-pipeline. Topics will be synced first. Check Actions tab in 2-5 min for video.');
+  showToast('🚀 Syncing topics & triggering pipeline...', 'info');
 
   try {
     // Get current SHA
@@ -285,11 +360,14 @@ triggerAuto.addEventListener('click', async () => {
       headers: { 'Authorization': `token ${CONFIG.token}` }
     });
     const current = getRes.ok ? await getRes.json() : null;
+
+    const topicsJson = JSON.stringify(topics, null, 2);
+    const content = btoa(unescape(encodeURIComponent(topicsJson)));
     const putRes = await fetch(`https://api.github.com/repos/${CONFIG.repo}/contents/pipeline/topics.json`, {
       method: 'PUT',
       headers: { 'Authorization': `token ${CONFIG.token}`, 'Accept': 'application/vnd.github+json' },
       body: JSON.stringify({
-        message: '🤖 Sync topics',
+        message: '🤖 Sync auto-research topics',
         content,
         sha: current?.sha,
         branch: 'main',
@@ -297,7 +375,6 @@ triggerAuto.addEventListener('click', async () => {
     });
     if (!putRes.ok) throw new Error('Topic sync failed');
 
-    // Trigger workflow
     const wfRes = await fetch(`https://api.github.com/repos/${CONFIG.repo}/actions/workflows/auto-hourly.yml/dispatches`, {
       method: 'POST',
       headers: { 'Authorization': `token ${CONFIG.token}`, 'Accept': 'application/vnd.github+json' },
@@ -312,11 +389,21 @@ triggerAuto.addEventListener('click', async () => {
       }),
     });
     if (!wfRes.ok && wfRes.status !== 204) throw new Error('Workflow trigger failed');
-    alert('✅ Pipeline started! Check GitHub Actions tab.');
+    showToast('✅ Pipeline started! Check Actions tab in 2-5 min.', 'success');
   } catch (err) {
-    alert('❌ ' + err.message);
+    showToast('❌ ' + err.message, 'error');
   }
 });
 
-// Initial render
-document.getElementById('repo-link').href = `https://github.com/${CONFIG.repo}`;
+// ============== GitHub link in footer ==============
+const repoLink = document.getElementById('repo-link');
+if (repoLink) repoLink.href = `https://github.com/${CONFIG.repo}`;
+
+// ============== Smooth scroll for nav links ==============
+document.querySelectorAll('.nav-links a[href^="#"]').forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(link.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth' });
+  });
+});
