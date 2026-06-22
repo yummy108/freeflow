@@ -1,0 +1,87 @@
+name: 🎬 On-Demand Video (MD → MP4)
+
+on:
+  workflow_dispatch:
+    inputs:
+      md_path:
+        description: 'Path to .md file'
+        required: false
+        type: string
+        default: 'pipeline/inputs/latest.md'
+      voice:
+        description: 'TTS voice'
+        required: false
+        type: string
+        default: 'hi-IN-Aoede'
+      style_prompt:
+        description: 'Style prompt'
+        required: false
+        type: string
+        default: 'आप एक अनुभवी YouTube narrator हैं। स्क्रिप्ट को रोचक, उत्साहित और स्पष्ट हिंदी में बोलें।'
+      style:
+        description: 'Visual style'
+        required: false
+        type: string
+        default: 'mixed'
+      aspect:
+        description: 'Aspect ratio'
+        required: false
+        type: string
+        default: '16:9'
+
+  push:
+    paths:
+      - 'pipeline/inputs/*.md'
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg imagemagick
+          sudo apt-get install -y fonts-dejavu fonts-liberation fonts-noto-core
+
+      - name: 📦 Install Python packages
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install duckduckgo-search Pillow
+
+      - name: 📄 Find MD file
+        id: find-md
+        run: |
+          if [ -n "${{ inputs.md_path }}" ] && [ -f "${{ inputs.md_path }}" ]; then
+            MD_FILE="${{ inputs.md_path }}"
+          else
+            MD_FILE=$(ls -t pipeline/inputs/*.md 2>/dev/null | head -1)
+          fi
+          if [ -z "$MD_FILE" ] || [ ! -f "$MD_FILE" ]; then
+            echo "❌ No .md file found"
+            exit 1
+          fi
+          echo "MD_FILE=$MD_FILE" >> $GITHUB_OUTPUT
+          echo "✅ Using: $MD_FILE"
+
+      - name: 🎬 Run pipeline
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TTS_STYLE_PROMPT: ${{ inputs.style_prompt }}
+        run: |
+          python -m pipeline.md_to_video \
+            --md "${{ steps.find-md.outputs.MD_FILE }}" \
+            --voice "${{ inputs.voice }}" \
+            --style "${{ inputs.style }}" \
+            --aspect "${{ inputs.aspect }}"
