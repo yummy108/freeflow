@@ -1,0 +1,26 @@
+# Core
+requests>=2.31.0
+python-dotenv>=1.0.0
+pyyaml>=6.0.1
+
+# TTS (Primary: Google Gemini TTS via REST API — no SDK needed, just requests)
+# TTS (Fallback: Microsoft Edge TTS — completely free, no key)
+edge-tts>=7.2.7
+
+# Video assembly
+moviepy>=2.2.1
+ffmpeg-python>=0.2.0
+
+# Subtitles
+# faster-whisper>=1.0.3   # optional, for word-level timing
+# openai-whisper>=20231117  # fallback
+
+# LLM (Gemini via REST, no SDK needed)
+# groq SDK as backup
+groq>=0.11.0
+
+# Pillow for placeholder images (image gen fallback)
+Pillow>=10.0.0
+
+# Pollinations (free, no key) - just uses requests
+# Pexels - just uses requests

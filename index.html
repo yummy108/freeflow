@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🎬 FreeFlow — Free AI Video Pipeline</title>
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎬%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="brand">
+      <span class="logo">🎬</span>
+      <h1>FreeFlow</h1>
+      <span class="tag">100% Free · AI · Open Source</span>
+    </div>
+    <p class="hero-sub">Upload a <code>.md</code> file &rarr; Get a video. Or set it on autopilot — research trending topics every hour and auto-publish videos. All free.</p>
+    <div class="badges">
+      <span class="badge ok">✓ GitHub Pages</span>
+      <span class="badge ok">✓ Gemini Free</span>
+      <span class="badge ok">✓ Edge TTS (Unlimited)</span>
+      <span class="badge ok">✓ Pollinations (Unlimited)</span>
+      <span class="badge ok">✓ Pexels Free</span>
+      <span class="badge ok">✓ MoviePy + FFmpeg</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- MODE TOGGLE -->
+  <section class="mode-toggle">
+    <button class="mode-btn active" data-mode="md">📄 Mode 1 — MD → Video</button>
+    <button class="mode-btn" data-mode="auto">🤖 Mode 2 — Auto Research Channel</button>
+  </section>
+
+  <!-- MODE 1: MD UPLOAD -->
+  <section id="mode-md" class="panel active">
+    <h2>📄 Drop your <code>.md</code> file</h2>
+    <p class="muted">Markdown format with headings & bullets works best. Each section becomes a scene.</p>
+
+    <div id="dropzone" class="dropzone">
+      <div class="dropzone-inner">
+        <div class="dz-icon">📥</div>
+        <p><strong>Drag & drop</strong> your <code>.md</code> file here</p>
+        <p class="muted">or</p>
+        <label class="btn-primary">
+          <input type="file" id="file-input" accept=".md,.markdown,text/markdown" hidden>
+          Browse Files
+        </label>
+        <p class="muted small">Max 2 MB · Only .md files</p>
+      </div>
+    </div>
+
+    <div id="md-preview" class="preview hidden">
+      <div class="preview-head">
+        <h3 id="md-filename"></h3>
+        <button class="btn-ghost" id="md-clear">✕ Clear</button>
+      </div>
+      <pre id="md-content"></pre>
+      <div class="form-row">
+        <label>
+          <span>Voice (Google Gemini TTS — Best Quality)</span>
+          <select id="voice-select">
+            <optgroup label="🇮🇳 Hindi (Recommended)">
+              <option value="hi-IN-Aoede" selected>🇮🇳 Aoede (Hindi Female, warm)</option>
+              <option value="hi-IN-Pulcherrima">🇮🇳 Pulcherrima (Hindi Female, expressive)</option>
+              <option value="hi-IN-Leda">🇮🇳 Leda (Hindi Female, young)</option>
+              <option value="hi-IN-Kore">🇮🇳 Kore (Hindi Female, clear)</option>
+              <option value="hi-IN-Charon">🇮🇳 Charon (Hindi Male, deep)</option>
+              <option value="hi-IN-Orus">🇮🇳 Orus (Hindi Male, professional)</option>
+              <option value="hi-IN-Zephyr">🇮🇳 Zephyr (Hindi Male, friendly)</option>
+              <option value="hi-IN-Fenrir">🇮🇳 Fenrir (Hindi Male, authoritative)</option>
+            </optgroup>
+            <optgroup label="🇺🇸 English">
+              <option value="en-US-Aoede">🇺🇸 Aoede (US English Female)</option>
+              <option value="en-US-Charon">🇺🇸 Charon (US English Male)</option>
+              <option value="en-US-Puck">🇺🇸 Puck (US English Male, energetic)</option>
+            </optgroup>
+            <optgroup label="🇮🇳 Indian English">
+              <option value="en-IN-Aoede">🇮🇳 Aoede (Indian English Female)</option>
+              <option value="en-IN-Charon">🇮🇳 Charon (Indian English Male)</option>
+            </optgroup>
+          </select>
+        </label>
+        <label>
+          <span>Style Prompt (Hindi Tone)</span>
+          <input type="text" id="style-prompt" placeholder="e.g. रोचक, उत्साहित, YouTube narrator अंदाज़ में" value="आप एक अनुभवी YouTube narrator हैं। स्क्रिप्ट को रोचक, उत्साहित और स्पष्ट हिंदी में बोलें।">
+        </label>
+      </div>
+
+      <div class="form-row">
+        <label>
+          <span>Visual Style</span>
+          <select id="style-select">
+            <option value="mixed" selected>🔀 Mixed (Best of both)</option>
+            <option value="stock">🎬 Stock Video (Pexels)</option>
+            <option value="ai">🎨 AI Image (Pollinations)</option>
+          </select>
+        </label>
+        <label>
+          <span>Aspect Ratio</span>
+          <select id="aspect-select">
+            <option value="16:9" selected>16:9 (YouTube)</option>
+            <option value="9:16">9:16 (Shorts/Reels)</option>
+            <option value="1:1">1:1 (Square)</option>
+          </select>
+        </label>
+      </div>
+
+      <button class="btn-primary big" id="trigger-pipeline">
+        🎬 Generate Video
+      </button>
+      <p class="muted small">This pushes your .md to the GitHub Action which runs the full pipeline. Takes 2–5 min. Video URL will appear below.</p>
+    </div>
+
+    <div id="md-status" class="status hidden">
+      <div class="spinner"></div>
+      <p id="status-text">Pipeline running…</p>
+    </div>
+
+    <div id="md-result" class="result hidden">
+      <h3>✅ Video Ready!</h3>
+      <video id="result-video" controls></video>
+      <div class="result-actions">
+        <a id="result-download" class="btn-primary" download>⬇️ Download MP4</a>
+        <a id="result-link" class="btn-ghost" target="_blank">🔗 Open in new tab</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODE 2: AUTO RESEARCH -->
+  <section id="mode-auto" class="panel">
+    <h2>🤖 Auto-Research Channel</h2>
+    <p class="muted">Add topics below. The GitHub Action will pick one every hour, do deep research, write a script, and produce a video — automatically.</p>
+
+    <div class="form-row">
+      <label>
+        <span>Add Topic</span>
+        <input type="text" id="topic-input" placeholder="e.g. Latest AI breakthroughs in 2026" />
+      </label>
+      <label>
+        <span>Category (optional)</span>
+        <select id="category-select">
+          <option value="tech">🔬 Tech / AI</option>
+          <option value="science">🌌 Science</option>
+          <option value="history">📜 History</option>
+          <option value="news">📰 News</option>
+          <option value="finance">💰 Finance</option>
+          <option value="health">💪 Health</option>
+          <option value="mystery">🔮 Mystery / Facts</option>
+          <option value="education">🎓 Education</option>
+          <option value="custom">✨ Custom</option>
+        </select>
+      </label>
+      <button class="btn-primary" id="add-topic-btn">➕ Add Topic</button>
+    </div>
+
+    <h3>📋 Current Topic Queue</h3>
+    <ul id="topic-list" class="topic-list">
+      <!-- populated by JS -->
+    </ul>
+
+    <div class="form-row">
+      <label>
+        <span>Voice (Google Gemini TTS)</span>
+        <select id="auto-voice">
+          <option value="hi-IN-Aoede" selected>🇮🇳 Aoede (Hindi Female)</option>
+          <option value="hi-IN-Pulcherrima">🇮🇳 Pulcherrima (Hindi Female, expressive)</option>
+          <option value="hi-IN-Leda">🇮🇳 Leda (Hindi Female, young)</option>
+          <option value="hi-IN-Charon">🇮🇳 Charon (Hindi Male, deep)</option>
+          <option value="hi-IN-Orus">🇮🇳 Orus (Hindi Male, professional)</option>
+          <option value="hi-IN-Zephyr">🇮🇳 Zephyr (Hindi Male, friendly)</option>
+          <option value="en-US-Aoede">🇺🇸 Aoede (US English)</option>
+          <option value="en-US-Charon">🇺🇸 Charon (US English)</option>
+          <option value="en-IN-Aoede">🇮🇳 Aoede (Indian English)</option>
+        </select>
+      </label>
+      <label>
+        <span>Aspect Ratio</span>
+        <select id="auto-aspect">
+          <option value="16:9" selected>16:9 (YouTube)</option>
+          <option value="9:16">9:16 (Shorts)</option>
+        </select>
+      </label>
+      <label>
+        <span>Style</span>
+        <select id="auto-style">
+          <option value="mixed" selected>🔀 Mixed</option>
+          <option value="stock">🎬 Stock</option>
+          <option value="ai">🎨 AI</option>
+        </select>
+      </label>
+    </div>
+
+    <button class="btn-primary big" id="trigger-auto">
+      🚀 Generate One Video Now
+    </button>
+
+    <h3>🎞️ Recent Videos</h3>
+    <ul id="video-list" class="video-list">
+      <li class="muted">No videos yet. Hit "Generate" above!</li>
+    </ul>
+  </section>
+
+  <!-- HELP / SETUP -->
+  <section class="help">
+    <h2>🛠️ How to set this up (5 min)</h2>
+    <ol>
+      <li><strong>Fork this repo</strong> on GitHub (must be <code>public</code> for free Actions).</li>
+      <li><strong>Get free API keys</strong> (all optional but recommended):
+        <ul>
+          <li><a href="https://aistudio.google.com/" target="_blank">Gemini API</a> — 1,500 req/day free (research + script)</li>
+          <li><a href="https://console.groq.com/" target="_blank">Groq</a> — 1,000 req/day free (super fast LLM)</li>
+          <li><a href="https://www.pexels.com/api/" target="_blank">Pexels</a> — Free stock video API</li>
+        </ul>
+        <em>Note: Edge TTS, Pollinations, Pixabay need NO key.</em>
+      </li>
+      <li><strong>Add secrets</strong>: <code>Settings → Secrets and variables → Actions → New repository secret</code>
+        <ul>
+          <li><code>GEMINI_API_KEY</code></li>
+          <li><code>GROQ_API_KEY</code></li>
+          <li><code>PEXELS_API_KEY</code></li>
+        </ul>
+      </li>
+      <li><strong>Enable GitHub Pages</strong>: <code>Settings → Pages → Source: main branch / root</code>. Your site will be live at <code>https://&lt;user&gt;.github.io/&lt;repo&gt;</code>.</li>
+      <li><strong>Add topics</strong> in Mode 2 above, then commit <code>pipeline/topics.json</code> via the web UI or manually.</li>
+      <li><strong>For hourly auto-run</strong>: GitHub Actions workflow is already set to run every hour. Just commit your <code>topics.json</code>.</li>
+    </ol>
+
+    <h2>📊 Tool Comparison (2026)</h2>
+    <table class="tools">
+      <thead>
+        <tr><th>What</th><th>Tool</th><th>Limit</th><th>API Key?</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Research</td><td>Gemini 2.5 Flash w/ Search</td><td>1,500/day</td><td>Yes (free)</td></tr>
+        <tr><td>Script</td><td>Groq Llama 3.3 70B</td><td>1,000/day</td><td>Yes (free)</td></tr>
+        <tr><td>Voice</td><td>Microsoft Edge TTS</td><td>Unlimited</td><td><strong>No</strong> ✨</td></tr>
+        <tr><td>Stock video</td><td>Pexels</td><td>200/hr, 20k/mo</td><td>Yes (free)</td></tr>
+        <tr><td>AI image</td><td>Pollinations (Flux)</td><td>Unlimited</td><td><strong>No</strong> ✨</td></tr>
+        <tr><td>Music</td><td>Pixabay / Suno free</td><td>10/day Suno</td><td>Pixabay: no, Suno: yes</td></tr>
+        <tr><td>Subtitles</td><td>faster-whisper (local)</td><td>Unlimited</td><td>No</td></tr>
+        <tr><td>Assembly</td><td>FFmpeg + MoviePy</td><td>Unlimited</td><td>No</td></tr>
+        <tr><td>Hosting</td><td>GitHub Pages</td><td>100GB BW</td><td>No</td></tr>
+        <tr><td>Scheduler</td><td>GitHub Actions</td><td>Unlimited (public)</td><td>No</td></tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+
+<footer>
+  <p>🎬 <strong>FreeFlow</strong> — 100% free, open source. MIT License. <a href="https://github.com/yourname/freeflow" id="repo-link">View on GitHub</a></p>
+</footer>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+[
+  {
+    "text": "भारत के अद्भुत अज्ञात तथ्य जो आप नहीं जानते",
+    "category": "facts",
+    "language": "hi",
+    "voice": "hi-IN-Aoede",
+    "style_prompt": "रोचक, उत्साहित, YouTube narrator अंदाज़ में बोलें"
+  },
+  {
+    "text": "AI की दुनिया के 2026 के सबसे बड़े बदलाव",
+    "category": "tech",
+    "language": "hi",
+    "voice": "hi-IN-Charon",
+    "style_prompt": "प्रोफेशनल, जानकारीपूर्ण, documentary अंदाज़ में"
+  },
+  {
+    "text": "अंतरिक्ष के रहस्य जो वैज्ञानिक भी नहीं समझ पाए",
+    "category": "science",
+    "language": "hi",
+    "voice": "hi-IN-Pulcherrima",
+    "style_prompt": "रहस्यमय, dramatic, calm tone में"
+  },
+  {
+    "text": "महाभारत के ऐसे रहस्य जो इतिहास में छुप गए",
+    "category": "history",
+    "language": "hi",
+    "voice": "hi-IN-Orus",
+    "style_prompt": "गंभीर, ऐतिहासिक, respectful tone में"
+  },
+  {
+    "text": "समुद्र की गहराई में छुपे अद्भुत जीव",
+    "category": "science",
+    "language": "hi",
+    "voice": "hi-IN-Leda",
+    "style_prompt": "रोमांचक, curious, discovery tone में"
+  },
+  {
+    "text": "भारत की अर्थव्यवस्था में 2026 के बड़े बदलाव",
+    "category": "finance",
+    "language": "hi",
+    "voice": "hi-IN-Fenrir",
+    "style_prompt": "Authoritative, data-driven, confident tone में"
+  },
+  {
+    "text": "जोकरों के बारे में हैरान कर देने वाले मनोवैज्ञानिक रहस्य",
+    "category": "mystery",
+    "language": "hi",
+    "voice": "hi-IN-Zephyr",
+    "style_prompt": "Mysterious, engaging, friendly tone में"
+  }
+]
