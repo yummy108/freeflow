@@ -202,21 +202,45 @@
     <p class="muted center small">Pipeline runs in GitHub Actions (free) · 2-5 min · No credit card</p>
   </div>
 
-  <!-- Status -->
+  <!-- Status Panel — STICKY at top so always visible -->
   <div id="md-status" class="status-card hidden">
-    <div class="spinner-large"></div>
-    <h3 id="status-title">Pipeline Running...</h3>
-    <p id="status-text">Initializing</p>
+    <div class="status-header">
+      <div class="spinner-large"></div>
+      <h3 id="status-title">⏳ Running... 0%</h3>
+    </div>
+    <p id="status-text">Initializing...</p>
     <div class="progress-bar">
       <div class="progress-fill" id="progress-fill"></div>
     </div>
     <div class="status-steps">
-      <div class="status-step" data-step="upload">📤 Upload MD</div>
+      <div class="status-step" data-step="upload">📤 Upload</div>
       <div class="status-step" data-step="research">🔍 Research</div>
       <div class="status-step" data-step="script">📝 Script</div>
       <div class="status-step" data-step="voice">🎤 Voice</div>
       <div class="status-step" data-step="visuals">🎨 Visuals</div>
-      <div class="status-step" data-step="assemble">🎞️ Assemble</div>
+      <div class="status-step" data-step="assemble">🎞️ Done</div>
+    </div>
+
+    <!-- Live Action Log -->
+    <div class="action-log-wrap">
+      <div class="action-log-header">
+        <span class="pulse-dot"></span>
+        <span>📋 LIVE ACTIVITY LOG</span>
+      </div>
+      <div id="action-log" class="action-log">
+        <div class="log-line log-info">
+          <span class="log-time">--:--:--</span>
+          <span class="log-icon">ℹ️</span>
+          <span class="log-msg">Waiting to start...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="quick-links">
+      <a id="actions-link" href="https://github.com/yummy108/freeflow/actions" target="_blank" class="quick-link">
+        📊 View live logs in Actions tab →
+      </a>
     </div>
   </div>
 
