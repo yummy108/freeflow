@@ -1,103 +1,52 @@
 # FreeFlow Pipeline Configuration — HINDI-FIRST DEFAULTS
-# All free tools configured. Override via env vars in production.
 
-# ====== TTS (Google Gemini TTS - Primary, FREE in AI Studio) ======
-# Falls back to Microsoft Edge TTS if Gemini quota exceeded.
 tts:
-  # Google Gemini voice (BETTER quality than Microsoft, especially Hindi)
-  default_voice: "hi-IN-Aoede"
-  prefer_engine: "gemini"   # "gemini" (best) or "edge" (fallback)
-  style_prompt: "आप एक अनुभवी YouTube narrator हैं। स्क्रिप्ट को रोचक, उत्साहित और स्पष्ट हिंदी में बोलें।"  # default Hindi style
+  default_voice: "hi-IN-SwaraNeural"
+  prefer_engine: "edge"
+  style_prompt: ""
 
-# Available voices (Gemini + Edge)
 voices:
-  # === HINDI (Best for our use case) ===
-  hindi_female: "hi-IN-Aoede"
-  hindi_female_young: "hi-IN-Leda"
-  hindi_female_expressive: "hi-IN-Pulcherrima"
-  hindi_male_deep: "hi-IN-Charon"
-  hindi_male_professional: "hi-IN-Orus"
-  hindi_male_friendly: "hi-IN-Zephyr"
-  hindi_male_authoritative: "hi-IN-Fenrir"
-  hindi_male_young: "hi-IN-Puck"
-  hindi_female_clear: "hi-IN-Kore"
+  hindi_female: "hi-IN-SwaraNeural"
+  hindi_male: "hi-IN-MadhurNeural"
+  english_us_female: "en-US-AriaNeural"
+  english_us_male: "en-US-GuyNeural"
 
-  # === ENGLISH ===
-  english_us_female: "en-US-Aoede"
-  english_us_male: "en-US-Charon"
-  english_uk_female: "en-US-Aoede"
-  english_uk_male: "en-US-Charon"
-  english_in_female: "en-IN-Aoede"
-  english_in_male: "en-IN-Charon"
-
-  # === EDGE TTS FALLBACK VOICES (auto-mapped if Gemini fails) ===
-  edge_hindi_female: "hi-IN-SwaraNeural"
-  edge_hindi_male: "hi-IN-MadhurNeural"
-  edge_english_female: "en-US-AriaNeural"
-  edge_english_male: "en-US-GuyNeural"
-  edge_english_in_female: "en-IN-NeerjaNeural"
-
-# ====== LLM (Gemini + Groq, both free) ======
 llm:
-  # Gemini 2.5 Flash is best for Hindi content
   provider: "gemini"
   gemini_model: "gemini-2.5-flash"
-  gemini_model_pro: "gemini-2.5-pro"  # for higher quality, paid only on free tier
-  groq_model: "llama-3.3-70b-versatile"  # backup
   max_tokens: 4000
   temperature: 0.7
 
-# ====== Image Generation (Pollinations - Free Unlimited) ======
 image:
   provider: "pollinations"
   width: 1920
   height: 1080
-  model: "flux"          # flux | turbo | gptimage | nanobanana
-  enhance: true
-  nologo: true
+  model: "flux"
 
-# ====== Stock Video (Pexels - Free) ======
 stock:
   provider: "pexels"
   per_page: 5
-  orientation: "landscape"   # landscape | portrait | square
+  orientation: "landscape"
 
-# ====== Subtitles (Hindi font default) ======
 subtitles:
-  # "Noto Sans Devanagari" renders Hindi beautifully
-  # Falls back to "Arial" if Noto isn't installed
   font: "Noto Sans Devanagari"
-  font_fallback: "Arial-Bold"
   fontsize: 60
-  color: "&H00FFFFFF"        # white in ASS format
+  color: "&H00FFFFFF"
   outline: 3
   shadow: 2
   words_per_line: 3
 
-# ====== Video Assembly ======
 video:
   fps: 30
   resolution:
     "16:9": [1920, 1080]
     "9:16": [1080, 1920]
-    "1:1": [1080, 1080]
   default_aspect: "16:9"
-  bgm_volume: 0.15            # 15% volume for background music
-  voice_volume: 1.0
-  transition_duration: 0.5
+  bgm_volume: 0.15
 
-# ====== Music (Pixabay Music - Free) ======
 music:
-  default_search: "cinematic ambient inspiring"
   volume: 0.15
 
-# ====== Output ======
 output:
   workdir: "pipeline/work"
   releases_dir: "releases"
-
-# ====== API Keys (set via env vars or GitHub Secrets) ======
-# GEMINI_API_KEY: free at https://aistudio.google.com (1,500 req/day free)
-# GITHUB_TOKEN: auto-provided in Actions
-# PEXELS_API_KEY: optional — free at https://www.pexels.com/api
-# GROQ_API_KEY: optional backup — free at https://console.groq.com
